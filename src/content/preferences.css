@@ -1,0 +1,10 @@
+#zotero-book-splitter-preferences { padding: 4px 10px; }
+.zbs-prefs-grid {
+  display: grid;
+  grid-template-columns: 150px minmax(280px, 1fr);
+  gap: 9px 12px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+.zbs-prefs-grid input, .zbs-prefs-grid select { width: 100%; box-sizing: border-box; }
+#zbs-prefs-key-warning { margin-top: 6px; color: color-mix(in srgb, CanvasText 65%, transparent); }

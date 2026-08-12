@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Zotero Book Splitter: a bound volume opened out into separately
+       citable chapter slabs, hinged on a common spine. -->
+  <g fill="none" stroke="none">
+    <!-- spine -->
+    <rect x="1.6" y="1.4" width="2.1" height="13.2" rx="0.9" fill="#8C3B22"/>
+    <!-- chapter slabs, fanned so the cut between them reads at 16px -->
+    <rect x="4.9" y="1.4" width="9.5" height="3.5" rx="0.85" fill="#D9743F"/>
+    <rect x="4.9" y="6.25" width="9.5" height="3.5" rx="0.85" fill="#C25E3A"/>
+    <rect x="4.9" y="11.1" width="9.5" height="3.5" rx="0.85" fill="#A84C31"/>
+    <!-- hinge marks tying each slab back to the spine -->
+    <rect x="3.5" y="2.75" width="1.6" height="0.8" rx="0.4" fill="#8C3B22"/>
+    <rect x="3.5" y="7.6" width="1.6" height="0.8" rx="0.4" fill="#8C3B22"/>
+    <rect x="3.5" y="12.45" width="1.6" height="0.8" rx="0.4" fill="#8C3B22"/>
+  </g>
+</svg>

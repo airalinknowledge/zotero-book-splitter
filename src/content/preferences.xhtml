@@ -1,0 +1,30 @@
+<vbox
+  id="zotero-book-splitter-preferences"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  onload="ZoteroBookSplitterPreferences.initPreferencePane()"
+>
+  <groupbox>
+    <label><html:h2 id="zbs-prefs-ai-heading">AI</html:h2></label>
+    <html:div class="zbs-prefs-grid">
+      <html:label id="zbs-prefs-provider-label" for="zbs-prefs-provider"></html:label>
+      <html:select id="zbs-prefs-provider" preference="extensions.zotero-book-splitter.ai.provider">
+        <html:option value="openai">OpenAI Responses API</html:option>
+        <html:option value="openai-compatible">OpenAI-compatible</html:option>
+        <html:option value="gemini">Google Gemini</html:option>
+        <html:option value="ollama">Ollama</html:option>
+      </html:select>
+      <html:label id="zbs-prefs-endpoint-label" for="zbs-prefs-endpoint"></html:label>
+      <html:input id="zbs-prefs-endpoint" type="url" preference="extensions.zotero-book-splitter.ai.endpoint" />
+      <html:label id="zbs-prefs-model-label" for="zbs-prefs-model"></html:label>
+      <html:input id="zbs-prefs-model" type="text" preference="extensions.zotero-book-splitter.ai.model" />
+      <html:label id="zbs-prefs-key-label" for="zbs-prefs-key"></html:label>
+      <html:input id="zbs-prefs-key" type="password" preference="extensions.zotero-book-splitter.ai.apiKey" autocomplete="off" />
+    </html:div>
+    <checkbox id="zbs-prefs-remember-key" preference="extensions.zotero-book-splitter.ai.rememberApiKey" />
+    <description id="zbs-prefs-key-warning"></description>
+  </groupbox>
+  <groupbox>
+    <label><html:h2 id="zbs-prefs-catalog-heading"></html:h2></label>
+    <checkbox id="zbs-prefs-catalog-enabled" preference="extensions.zotero-book-splitter.catalog.enabled" />
+  </groupbox>
+</vbox>

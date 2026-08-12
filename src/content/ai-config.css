@@ -1,0 +1,61 @@
+window {
+  color-scheme: light dark;
+  font: menu;
+  min-width: 520px;
+  min-height: 260px;
+}
+
+#ai-config-root {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 20px 22px;
+  background: Canvas;
+  color: CanvasText;
+}
+
+#ai-config-root * { box-sizing: border-box; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px 14px;
+}
+
+.form-grid label { padding-top: 7px; font-weight: 650; }
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, CanvasText 24%, transparent);
+  border-radius: 5px;
+  padding: 7px 9px;
+  background: Field;
+  color: FieldText;
+  font: inherit;
+}
+
+.form-grid small {
+  display: block;
+  margin-top: 5px;
+  color: color-mix(in srgb, CanvasText 62%, transparent);
+}
+
+.service-line {
+  margin: 16px 0 0;
+  color: color-mix(in srgb, CanvasText 62%, transparent);
+  font-size: 0.86rem;
+}
+
+.disclosure {
+  margin: 6px 0 0;
+  line-height: 1.45;
+  color: color-mix(in srgb, CanvasText 78%, transparent);
+  font-size: 0.86rem;
+}
+
+.error { color: #a12622; margin: 12px 0 0; }
+
+footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+button { padding: 7px 14px; }
+button.primary { background: #2d6cdf; border-color: #2d6cdf; color: white; }
+button:disabled { opacity: 0.55; }

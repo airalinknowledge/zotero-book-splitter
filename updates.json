@@ -1,0 +1,18 @@
+{
+  "addons": {
+    "zotero-book-splitter@juntaoyang.local": {
+      "updates": [
+        {
+          "version": "0.13.6",
+          "update_link": "https://raw.githubusercontent.com/airalinknowledge/zotero-book-splitter/main/zoterobooksplitter0.13.6.xpi",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "8.999",
+              "strict_max_version": "9.0.*"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

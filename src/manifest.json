@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero Book Splitter",
+  "version": "0.13.6",
+  "description": "Build PDF bookmarks from a recognised table of contents, or split a book into separately citable chapters.",
+  "icons": {
+    "32": "content/icon32.png",
+    "48": "content/icon48.png",
+    "96": "content/icon96.png"
+  },
+  "applications": {
+    "zotero": {
+      "id": "zotero-book-splitter@juntaoyang.local",
+      "update_url": "https://raw.githubusercontent.com/airalinknowledge/zotero-book-splitter/main/updates.json",
+      "strict_min_version": "8.999",
+      "strict_max_version": "9.0.*"
+    }
+  }
+}

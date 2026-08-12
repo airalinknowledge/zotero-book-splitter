@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="ai-config.css" type="text/css"?>
+<window
+  id="zotero-book-splitter-ai-config-window"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  title="AI-assisted contents analysis"
+  width="560"
+  height="300"
+>
+  <html:main id="ai-config-root">
+    <html:div class="form-grid">
+      <html:label for="ai-input-mode" id="input-mode-label"></html:label>
+      <html:select id="ai-input-mode">
+        <html:option id="input-mode-fast" value="fast"></html:option>
+        <html:option id="input-mode-full" value="full"></html:option>
+        <html:option id="input-mode-manual" value="manual"></html:option>
+      </html:select>
+
+      <html:label id="manual-range-label" for="ai-page-range" hidden="hidden"></html:label>
+      <html:div id="manual-range-row" hidden="hidden">
+        <html:input id="ai-page-range" type="text" spellcheck="false" />
+        <html:small id="page-range-note"></html:small>
+      </html:div>
+    </html:div>
+
+    <html:p id="ai-service" class="service-line"></html:p>
+    <html:p id="privacy-exact" class="disclosure"></html:p>
+
+    <html:p id="ai-error" class="error" hidden="hidden"></html:p>
+    <html:footer>
+      <html:button id="ai-cancel" type="button"></html:button>
+      <html:button id="ai-continue" class="primary" type="button"></html:button>
+    </html:footer>
+  </html:main>
+  <script src="ai-config.js?rev=0.13.5" />
+</window>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="preview.css" type="text/css"?>
+<window
+  id="zotero-book-splitter-preview-window"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  title="Book Split Preview"
+  width="1180"
+  height="720"
+  persist="screenX screenY width height"
+>
+  <html:div id="preview-root">
+    <html:header>
+      <html:div>
+        <html:h1 id="preview-title"></html:h1>
+        <html:p id="book-title" class="book-title">…</html:p>
+      </html:div>
+    </html:header>
+
+    <html:p id="preview-status" class="status">…</html:p>
+
+    <html:fieldset class="output-options">
+      <html:legend id="output-legend"></html:legend>
+      <html:label class="mode-card">
+        <html:input type="radio" name="output-mode" value="parentAttachments" checked="checked" />
+        <html:strong id="parent-mode-label"></html:strong>
+      </html:label>
+      <html:label class="mode-card">
+        <html:input type="radio" name="output-mode" value="bookSections" />
+        <html:strong id="section-mode-label"></html:strong>
+      </html:label>
+      <html:label id="collection-option" class="collection-option">
+        <html:input id="inherit-collections" type="checkbox" checked="checked" />
+        <html:strong id="collection-label"></html:strong>
+      </html:label>
+    </html:fieldset>
+
+    <html:dl class="summary">
+      <html:div><html:dt id="summary-pdf-label"></html:dt><html:dd id="pdf-title">—</html:dd></html:div>
+      <html:div><html:dt id="summary-pages-label"></html:dt><html:dd id="total-pages">—</html:dd></html:div>
+      <html:div><html:dt id="summary-chapters-label"></html:dt><html:dd id="section-count">—</html:dd></html:div>
+      <html:div><html:dt id="summary-source-label"></html:dt><html:dd id="source-type">—</html:dd></html:div>
+      <html:div><html:dt id="summary-selected-label"></html:dt><html:dd id="selected-count">—</html:dd></html:div>
+      <html:div><html:dt id="summary-notes-label"></html:dt><html:dd id="notes-range">—</html:dd></html:div>
+      <html:div><html:dt id="summary-operation-label"></html:dt><html:dd id="operation-mode">—</html:dd></html:div>
+    </html:dl>
+
+    <html:main>
+      <html:div class="selection-tools">
+        <html:strong id="selection-label"></html:strong>
+        <html:div>
+          <html:button id="select-all" type="button"></html:button>
+          <html:button id="select-none" type="button"></html:button>
+        </html:div>
+      </html:div>
+      <html:table>
+        <html:thead>
+          <html:tr>
+            <html:th id="select-heading"></html:th>
+            <html:th id="position-heading"></html:th>
+            <html:th id="title-heading"></html:th>
+            <html:th id="authors-heading"></html:th>
+            <html:th id="printed-pages-heading"></html:th>
+            <html:th id="physical-pages-heading"></html:th>
+          </html:tr>
+        </html:thead>
+        <html:tbody id="sections" />
+      </html:table>
+    </html:main>
+
+    <html:footer>
+      <html:span id="commit-status"></html:span>
+      <html:div class="footer-actions">
+        <html:button id="close-button" type="button"></html:button>
+        <html:button id="repair-bookmarks-button" type="button"></html:button>
+        <html:button id="commit-button" class="primary" type="button"></html:button>
+      </html:div>
+    </html:footer>
+  </html:div>
+  <script src="preview.js?rev=0.13.5" />
+</window>
