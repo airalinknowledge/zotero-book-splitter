@@ -367,6 +367,34 @@ test("EPUB splitting trims multiple chapter anchors from a shared XHTML document
   assert.equal(result[0].hasPageNumbers, false);
 });
 
+test("EPUB splitting preserves linked note documents declared outside the reading spine", async () => {
+  const module = loadModule();
+  const source = path.join(scratch, "off-spine-notes.epub");
+  const output = path.join(scratch, "off-spine-notes-output");
+  await writeFixture(source);
+  const fixture = await JSZip.loadAsync(await fs.promises.readFile(source));
+  const packageXML = await fixture.file("OEBPS/content.opf").async("string");
+  fixture.file("OEBPS/content.opf", packageXML.replace('<itemref idref="notes"/>', ""));
+  await fs.promises.writeFile(source, await fixture.generateAsync({ type: "nodebuffer" }));
+  await fs.promises.mkdir(output);
+
+  const preview = await module.inspect(source);
+  const results = await module.prepare(source, preview, output, [0], [{
+    sourceIndex: 0,
+    title: "First Essay",
+    authors: [],
+    startPageLabel: "5",
+    endPageLabel: "5"
+  }]);
+  const chapter = new FakeEPUB(results[0].path);
+
+  assert.equal(results[0].report.auxiliaryDocuments, 1);
+  assert(chapter.entries.has("OEBPS/notes.xhtml"));
+  assert.match(chapter.entries.get("OEBPS/chapter-1.xhtml").toString(), /href="notes.xhtml#note1"/);
+  assert.match(chapter.entries.get("OEBPS/content.opf").toString(), /id="notes"/);
+  assert.doesNotMatch(chapter.entries.get("OEBPS/content.opf").toString(), /idref="notes"/);
+});
+
 test("EPUB 2 NCX navigation remains readable after selecting an individual chapter", async () => {
   const module = loadModule();
   const source = path.join(scratch, "legacy.epub");

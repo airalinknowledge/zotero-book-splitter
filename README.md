@@ -10,11 +10,13 @@ PDF 可以读取原生目录书签、通过你配置的 AI 接口识别目录，
 
 原书记录、笔记和完整 PDF / EPUB 会保留，不会被覆盖。你可以只处理需要的章节；重复执行时，即使检测到同名章节，也会按你的操作再次创建副本。新生成的独立条目默认不会加入母本所在分类，除非你在预览中主动勾选。
 
-EPUB 拆分会保留原有样式、图片、字体，以及章节引用的注释等内部链接文档。原书没有可靠的印刷页码映射时，章节位置只用于预览，不会误写进 Zotero 引用的 `pages` 字段。受 DRM 保护的 EPUB 不支持拆分。
+EPUB 拆分会保留原有样式、图片、字体，以及章节引用的注释等内部链接文档，包括没有列入阅读书脊的注释文件。原书没有可靠的印刷页码映射时，章节位置只用于预览，不会误写进 Zotero 引用的 `pages` 字段。受 DRM 保护的 EPUB 不支持拆分。
+
+为已有 PDF 修复或建立目录时，原来的封面、分部、节、小节、参考文献和索引书签会完整保留；已有书签的跳转位置、样式和折叠状态也不会被章节识别结果覆盖。
 
 ## 安装
 
-1. 下载 [`zoterobooksplitter0.14.0.xpi`](https://github.com/airalinknowledge/zotero-book-splitter/raw/main/zoterobooksplitter0.14.0.xpi)。
+1. 下载 [`zoterobooksplitter0.14.1.xpi`](https://github.com/airalinknowledge/zotero-book-splitter/releases/download/v0.14.1/zoterobooksplitter0.14.1.xpi)。
 2. 打开 Zotero，进入“设置 → 高级 → 扩展”。
 3. 点击齿轮按钮，选择“从文件安装附加组件”，然后选择下载的 XPI。
 4. 按提示重启 Zotero。
@@ -29,8 +31,8 @@ EPUB 拆分会保留原有样式、图片、字体，以及章节引用的注释
 
 ## 文件说明
 
-- `zoterobooksplitter0.14.0.xpi`：可直接安装的插件。
-- `zotero-book-splitter-0.14.0-source.zip`：完整源代码及随包资源。
+- `zoterobooksplitter0.14.1.xpi`：可直接安装的插件。
+- `zotero-book-splitter-0.14.1-source.zip`：完整源代码及随包资源。
 - `src/`：便于在线查看的主要源代码。
 - `updates.json`：Zotero 自动更新信息。
 

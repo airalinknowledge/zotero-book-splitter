@@ -54,8 +54,12 @@ def build(project: Path, template: Path | None = None, destination: Path | None 
             raise ValueError("The packaged manifest version does not match src/manifest.json")
         if "content/epub.js" not in names:
             raise ValueError("The EPUB implementation was not included in the generated XPI")
+        if "content/outline-preservation.js" not in names:
+            raise ValueError("The PDF bookmark-preservation implementation was not included in the generated XPI")
         if b"content/epub.js" not in output.read("bootstrap.js"):
             raise ValueError("The packaged bootstrap does not load the EPUB implementation")
+        if b"content/outline-preservation.js" not in output.read("bootstrap.js"):
+            raise ValueError("The packaged bootstrap does not load the PDF bookmark-preservation implementation")
         if output.testzip() is not None:
             raise ValueError("The generated XPI failed CRC validation")
 

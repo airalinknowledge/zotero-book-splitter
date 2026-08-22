@@ -100788,20 +100788,59 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
   function descendantCount(node) {
     return node.children.reduce((sum2, child) => sum2 + 1 + descendantCount(child), 0);
   }
+  function originalOutlineDictionaries(document2) {
+    const dictionaries = /* @__PURE__ */ new Map();
+    const root = document2.catalog.lookupMaybe(OUTLINES2, PDFDict_default);
+    const visited = /* @__PURE__ */ new Set();
+    const visitedDirect = /* @__PURE__ */ new WeakSet();
+    let index = 0;
+    const visitChain = (firstObject) => {
+      let current = firstObject;
+      while (current) {
+        if (current instanceof PDFRef_default) {
+          if (visited.has(current.tag)) break;
+          visited.add(current.tag);
+        } else {
+          if (visitedDirect.has(current)) break;
+          visitedDirect.add(current);
+        }
+        const dictionary = document2.context.lookupMaybe(current, PDFDict_default);
+        if (!dictionary) break;
+        const id = current instanceof PDFRef_default ? `outline-${current.objectNumber}` : `outline-${index}`;
+        index += 1;
+        dictionaries.set(id, dictionary);
+        const child = dictionary.get(FIRST2);
+        if (child) visitChain(child);
+        current = dictionary.get(NEXT2);
+      }
+    };
+    const first = root?.get(FIRST2);
+    if (first) visitChain(first);
+    return { root, dictionaries };
+  }
   async function writeNativeOutline(sourceBytes, entries) {
     if (entries.length === 0) throw new Error("No bookmark entries were supplied.");
     const document2 = await PDFDocument_default.load(sourceBytes, { updateMetadata: false });
     const pageCount = document2.getPageCount();
     const roots = buildTree(entries);
-    const root = PDFDict_default.withContext(document2.context);
+    const existing = originalOutlineDictionaries(document2);
+    const root = existing.root?.clone(document2.context) ?? PDFDict_default.withContext(document2.context);
+    for (const pointer of [FIRST2, LAST, COUNT]) root.delete(pointer);
     root.set(PDFName_default.of("Type"), OUTLINES2);
     const rootRef = document2.context.register(root);
     const allocate = (nodes) => {
       for (const node of nodes) {
-        if (node.entry.startPageIndex < 0 || node.entry.startPageIndex >= pageCount) {
+        const original = existing.dictionaries.get(node.entry.sourceOutlineId);
+        if (node.entry.startPageIndex === null && !original) {
+          throw new RangeError("New bookmark entries must have a valid PDF page destination.");
+        }
+        if (node.entry.startPageIndex !== null && (!Number.isInteger(node.entry.startPageIndex) || node.entry.startPageIndex < 0 || node.entry.startPageIndex >= pageCount)) {
           throw new RangeError(`Bookmark page ${node.entry.startPageIndex + 1} is outside the PDF.`);
         }
-        node.dict = PDFDict_default.withContext(document2.context);
+        node.original = original;
+        node.originalCount = original?.lookupMaybe(COUNT, PDFNumber_default)?.asNumber();
+        node.dict = original?.clone(document2.context) ?? PDFDict_default.withContext(document2.context);
+        for (const pointer of [FIRST2, LAST, NEXT2, PREV, PARENT, COUNT]) node.dict.delete(pointer);
         node.ref = document2.context.register(node.dict);
         allocate(node.children);
       }
@@ -100813,16 +100852,22 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
         const ref = node.ref;
         dict.set(TITLE2, PDFHexString_default.fromText(node.entry.structuralTitle));
         // Round-trip metadata. See ZBS_AUTHORS in the outline reader.
+        if (Object.prototype.hasOwnProperty.call(node.entry, "authors")) dict.delete(ZBS_AUTHORS2);
         if (node.entry.authors?.length) {
           dict.set(ZBS_AUTHORS2, PDFHexString_default.fromText(node.entry.authors.join("; ")));
         }
+        if (Object.prototype.hasOwnProperty.call(node.entry, "citationTitle")) dict.delete(ZBS_TITLE2);
         if (node.entry.citationTitle && node.entry.citationTitle !== node.entry.structuralTitle) {
           dict.set(ZBS_TITLE2, PDFHexString_default.fromText(node.entry.citationTitle));
         }
-        const destination = PDFArray_default.withContext(document2.context);
-        destination.push(document2.getPage(node.entry.startPageIndex).ref);
-        destination.push(PDFName_default.of("Fit"));
-        dict.set(DEST3, destination);
+        if (!(node.original && node.entry.preserveOriginalDestination)) {
+          dict.delete(DEST3);
+          dict.delete(A2);
+          const destination = PDFArray_default.withContext(document2.context);
+          destination.push(document2.getPage(node.entry.startPageIndex).ref);
+          destination.push(PDFName_default.of("Fit"));
+          dict.set(DEST3, destination);
+        }
         dict.set(PARENT, parentRef);
         const previous = nodes[index - 1]?.ref;
         const next = nodes[index + 1]?.ref;
@@ -100831,7 +100876,8 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
         if (node.children.length) {
           dict.set(FIRST2, node.children[0].ref);
           dict.set(LAST, node.children.at(-1).ref);
-          dict.set(COUNT, PDFNumber_default.of(descendantCount(node)));
+          const direction = node.originalCount < 0 ? -1 : 1;
+          dict.set(COUNT, PDFNumber_default.of(direction * descendantCount(node)));
           linkSiblings(node.children, ref);
         }
       });
@@ -100873,10 +100919,15 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       metadata,
       preview.proposedSections.map((_, index) => index)
     );
-    const bookmarkEntries = entriesForNativeBookmarks(completePlan);
-    if (bookmarkEntries.length < 2) {
+    const confirmedEntries = entriesForNativeBookmarks(completePlan);
+    if (confirmedEntries.length < 2) {
       throw new Error("Fewer than two reliable bookmark entries remain after duplicate filtering.");
     }
+    const original = await analyzeBookOutline(sourceBytes);
+    const bookmarkEntries = ZoteroBookSplitterOutlinePreservation.merge(
+      original.outlineEntries,
+      confirmedEntries
+    );
     const outputBytes = await writeNativeOutline(sourceBytes, bookmarkEntries);
     const nonce = Zotero.randomString(8);
     const temporaryPath = siblingPath(sourcePath, `.zbs-outline-${nonce}.tmp`);
@@ -100896,7 +100947,7 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       for (let index = 0; index < bookmarkEntries.length; index += 1) {
         const expected = bookmarkEntries[index];
         const observed = actual[index];
-        if (normalizeOutlineTitle(observed.title) !== normalizeOutlineTitle(expected.structuralTitle) || observed.pageIndex !== expected.startPageIndex) {
+        if (normalizeOutlineTitle(observed.title) !== normalizeOutlineTitle(expected.structuralTitle) || observed.pageIndex !== expected.startPageIndex || observed.depth !== expected.depth) {
           throw new Error(`Outline validation failed at entry ${index + 1}: ${expected.structuralTitle}`);
         }
       }

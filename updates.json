@@ -3,8 +3,8 @@
     "zotero-book-splitter@juntaoyang.local": {
       "updates": [
         {
-          "version": "0.14.0",
-          "update_link": "https://raw.githubusercontent.com/airalinknowledge/zotero-book-splitter/main/zoterobooksplitter0.14.0.xpi",
+          "version": "0.14.1",
+          "update_link": "https://raw.githubusercontent.com/airalinknowledge/zotero-book-splitter/main/zoterobooksplitter0.14.1.xpi",
           "applications": {
             "zotero": {
               "strict_min_version": "8.999",

@@ -25,6 +25,10 @@ jobs:
           node --check src/content/plugin.js
           node --check src/content/preview.js
           node --check src/content/epub.js
+          node --check src/content/outline-preservation.js
+
+      - name: Verify existing PDF bookmark trees remain intact
+        run: node --test tests/outline-preservation.test.cjs
 
       - name: Build and validate the installable XPI
         run: python3 scripts/build-release.py
@@ -51,6 +55,6 @@ jobs:
             gh release create "v${version}" "${xpi}" "${source}" \
               --target "$(git rev-parse HEAD)" \
               --title "Zotero Book Splitter ${version} Beta" \
-              --notes "Adds native EPUB 2/3 chapter splitting while preserving the complete book, chapter resources, linked notes, and optional independently citable Book Sections." \
+              --notes "Adds native EPUB 2/3 chapter splitting, preserves linked notes outside the reading spine, and retains existing multi-level PDF bookmarks, destinations, styles, and collapse state during bookmark repair." \
               --prerelease
           fi

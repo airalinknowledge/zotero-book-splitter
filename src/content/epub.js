@@ -528,7 +528,10 @@ var ZoteroBookSplitterEPUB = (() => {
     const chapterPaths = new Set(
       info.spine.slice(section.spineStartIndex, section.spineEndIndex + 1).map((item) => item.path)
     );
-    const spinePaths = new Set(info.spine.map((item) => item.path));
+    const readableDocuments = new Set(
+      info.manifest.filter((item) => item.mediaType === XHTML_TYPE && reader._zipReader.hasEntry(item.path))
+        .map((item) => item.path)
+    );
     const documents = new Map();
     for (const archivePath of chapterPaths) {
       const document = await reader._parseEntryToDocument(archivePath, XHTML_TYPE);
@@ -540,7 +543,7 @@ var ZoteroBookSplitterEPUB = (() => {
     const auxiliaryPaths = new Set();
     for (const [archivePath, document] of documents) {
       for (const target of pageLinkDestinations(document, archivePath)) {
-        if (spinePaths.has(target.path) && !chapterPaths.has(target.path)) {
+        if (readableDocuments.has(target.path) && !chapterPaths.has(target.path)) {
           auxiliaryPaths.add(target.path);
         }
       }
