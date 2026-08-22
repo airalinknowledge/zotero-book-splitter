@@ -100988,7 +100988,7 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
     });
     return {
       mode: request.mode,
-      inheritCollections: request.mode === "bookSections" && request.inheritCollections !== false,
+      inheritCollections: request.mode === "bookSections" && request.inheritCollections === true,
       selectedIndexes: indexes,
       metadata
     };
@@ -101304,7 +101304,7 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
             preparedChapter.citationTitle
           ),
           fileBaseName: preparedChapter.fileBaseName,
-          contentType: "application/pdf"
+          contentType: preparedChapter.contentType ?? "application/pdf"
         });
         journal.attachmentItemIDs.push(attachment.id);
         await persist(journal);
@@ -101411,7 +101411,7 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       );
     }
   }
-  async function commitPreparedBookSections(book, prepared, inheritCollections = true) {
+  async function commitPreparedBookSections(book, prepared, inheritCollections = false) {
     if (!book.isEditable()) {
       throw new Error("\u8BE5 Zotero \u6587\u5E93\u4E0D\u53EF\u7F16\u8F91\uFF0C\u65E0\u6CD5\u521B\u5EFA\u72EC\u7ACB\u7AE0\u8282\u6761\u76EE\u3002");
     }
@@ -101452,7 +101452,9 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
         chapter.setField("title", preparedChapter.citationTitle);
         chapter.setField(
           "pages",
-          `${preparedChapter.metadata.startPageLabel}\u2013${preparedChapter.metadata.endPageLabel}`
+          preparedChapter.hasPageNumbers === false
+            ? false
+            : `${preparedChapter.metadata.startPageLabel}\u2013${preparedChapter.metadata.endPageLabel}`
         );
         chapter.setField("shortTitle", false);
         chapter.setField("abstractNote", false);
@@ -101473,7 +101475,7 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
             preparedChapter.citationTitle
           ),
           fileBaseName: preparedChapter.fileBaseName,
-          contentType: "application/pdf"
+          contentType: preparedChapter.contentType ?? "application/pdf"
         });
         return { id: attachment.id, value: attachment };
       },
@@ -101851,16 +101853,27 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       item && (item.isPDFAttachment?.() || item.attachmentContentType === "application/pdf")
     );
   }
+  function isEpub(item) {
+    return Boolean(
+      item && (
+        item.isEPUBAttachment?.()
+        || item.attachmentContentType === "application/epub+zip"
+        || /\.epub$/iu.test(item.attachmentFilename ?? "")
+      )
+    );
+  }
   function selectedItem(win) {
     const items = win.ZoteroPane?.getSelectedItems() ?? [];
     return items.length === 1 ? items[0] ?? null : null;
   }
   async function selectedTarget(win) {
     const item = selectedItem(win);
-    if (item && isBook(item)) return { book: item, preferredPdf: null };
-    if (!item || !isPdf(item) || !item.parentItemID) return null;
+    if (item && isBook(item)) return { book: item, preferredPdf: null, preferredDocument: null };
+    if (!item || !(isPdf(item) || isEpub(item)) || !item.parentItemID) return null;
     const parent = await Zotero.Items.getAsync(item.parentItemID);
-    return parent && isBook(parent) ? { book: parent, preferredPdf: item } : null;
+    return parent && isBook(parent)
+      ? { book: parent, preferredPdf: isPdf(item) ? item : null, preferredDocument: item }
+      : null;
   }
   function alert(win, message) {
     Services.prompt.alert(win, "Zotero Book Splitter", message);
@@ -101943,6 +101956,60 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       win,
       t(currentLanguage(), "choosePdfTitle"),
       t(currentLanguage(), "choosePdfMessage"),
+      candidates.map((candidate) => candidate.label),
+      selected
+    );
+    return confirmed ? candidates[selected.value] ?? null : null;
+  }
+  async function chooseDocument(win, target) {
+    const language = currentLanguage();
+    if (target.preferredDocument) {
+      const path = await target.preferredDocument.getFilePathAsync?.();
+      if (!path) {
+        throw new Error(
+          language === "zh-CN"
+            ? "选中的 PDF 或 EPUB 附件不在本机，或 Zotero 无法取得其路径。"
+            : "The selected PDF or EPUB attachment is not locally available."
+        );
+      }
+      return {
+        item: target.preferredDocument,
+        path,
+        label: target.preferredDocument.getField("title") || target.preferredDocument.attachmentFilename
+      };
+    }
+    const attachmentIDs = target.book.getAttachments();
+    const attachments = attachmentIDs.length ? await Zotero.Items.getAsync(attachmentIDs) : [];
+    const readable = attachments.filter((item) => isPdf(item) || isEpub(item));
+    if (!readable.length) {
+      throw new Error(
+        language === "zh-CN"
+          ? "选中的 Book 条目下没有 PDF 或 EPUB 附件。"
+          : "The selected Book has no PDF or EPUB attachment."
+      );
+    }
+    const candidates = (await Promise.all(readable.map(async (item, index) => {
+      const path = await item.getFilePathAsync?.();
+      if (!path) return null;
+      const filename = item.attachmentFilename ?? "";
+      const label = `${isEpub(item) ? "EPUB" : "PDF"} · ${formatPdfChoiceLabel(index, item.getField("title"), filename)}`;
+      return { item, path, label };
+    }))).filter(Boolean);
+    if (!candidates.length) {
+      throw new Error(
+        language === "zh-CN"
+          ? "该 Book 的 PDF / EPUB 附件均不在本机。"
+          : "None of this Book's PDF or EPUB attachments is locally available."
+      );
+    }
+    if (candidates.length === 1) return candidates[0];
+    const selected = { value: 0 };
+    const confirmed = Services.prompt.select(
+      win,
+      language === "zh-CN" ? "选择 PDF 或 EPUB" : "Choose PDF or EPUB",
+      language === "zh-CN"
+        ? "该 Book 包含多个本地文档，请选择要拆分的文件。"
+        : "This Book contains multiple local documents. Choose the file to split.",
       candidates.map((candidate) => candidate.label),
       selected
     );
@@ -102192,13 +102259,148 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
       alert(win, t(currentLanguage(), "buildOutlineFailed", { message }));
     }
   }
+  async function prepareEpubChapterFiles(path, preview, selectedIndexes, metadataEdits) {
+    const tempDirectory = PathUtils.join(
+      Zotero.getTempDirectory().path,
+      `book-splitter-epub-${Date.now()}-${Zotero.randomString(8)}`
+    );
+    await IOUtils.makeDirectory(tempDirectory);
+    try {
+      const chapters = await ZoteroBookSplitterEPUB.prepare(
+        path,
+        preview,
+        tempDirectory,
+        selectedIndexes,
+        metadataEdits
+      );
+      for (const chapter of chapters) {
+        chapter.fileBaseName = safeFileBaseName(chapter.sourceIndex, chapter.citationTitle);
+      }
+      return { tempDirectory, chapters };
+    } catch (error3) {
+      await IOUtils.remove(tempDirectory, { recursive: true, ignoreAbsent: true });
+      throw error3;
+    }
+  }
+  function formatEpubCommitSummary(prepared, mode, language) {
+    const descriptions = prepared.chapters.map((chapter) => {
+      const notes = chapter.report.auxiliaryDocuments;
+      return language === "zh-CN"
+        ? `${chapterOrderLabel(chapter.sourceIndex)}. ${chapter.citationTitle}${notes ? `；保留 ${notes} 个内部链接文档` : ""}`
+        : `${chapterOrderLabel(chapter.sourceIndex)}. ${chapter.citationTitle}${notes ? `; ${notes} linked document(s) retained` : ""}`;
+    });
+    const heading = language === "zh-CN"
+      ? [
+        `已生成并验证 ${prepared.chapters.length} 个独立 EPUB。`,
+        mode === "parentAttachments"
+          ? "确认后将放在原 Book 条目下；完整 EPUB 和原有笔记保持不变。"
+          : "确认后将生成独立 Book Section，并附加对应章节 EPUB。"
+      ]
+      : [
+        `Generated and validated ${prepared.chapters.length} independent EPUB files.`,
+        mode === "parentAttachments"
+          ? "Confirmation will attach them to the original Book; the complete EPUB and existing notes remain unchanged."
+          : "Confirmation will create independent Book Sections with their chapter EPUBs."
+      ];
+    return [...heading, "", ...descriptions].join("\n");
+  }
+  async function previewEpubSelected(win, target, candidate, language) {
+    if (!ZoteroBookSplitterEPUB) {
+      throw new Error(language === "zh-CN" ? "EPUB 模块没有载入，请重新安装插件。" : "The EPUB module did not load; reinstall the plugin.");
+    }
+    Zotero.debug(`Zotero Book Splitter: inspecting EPUB ${candidate.path}`);
+    const preview = await ZoteroBookSplitterEPUB.inspect(candidate.path);
+    const inheritableAuthors = bookInheritableAuthors(target.book);
+    const model = {
+      ...preview,
+      documentType: "epub",
+      language,
+      bookTitle: target.book.getField("title") || "Untitled book",
+      pdfTitle: candidate.item.getField("title") || candidate.item.attachmentFilename || "EPUB attachment",
+      bookCollectionCount: target.book.getCollections().length,
+      migrationAvailable: false,
+      existingGeneratedIndexes: [],
+      staleGeneratedTitles: [],
+      citationTitles: preview.proposedSections.map((section) => citationTitleFromOutline(section.title)),
+      chapterMetadata: preview.proposedSections.map((section, sourceIndex) => ({
+        sourceIndex,
+        title: citationTitleFromOutline(section.title),
+        authors: [...inheritableAuthors],
+        startPageLabel: section.startPageLabel,
+        endPageLabel: section.endPageLabel,
+        confidence: section.confidence,
+        warnings: [...section.metadataWarnings ?? []]
+      }))
+    };
+    let committing = false;
+    let committed = false;
+    const controller = {
+      log: (message) => Zotero.debug(`Zotero Book Splitter: EPUB preview: ${message}`),
+      commit: async (rawRequest) => {
+        if (committed) {
+          throw new Error(language === "zh-CN" ? "这些 EPUB 章节已经创建，当前窗口不能重复执行。" : "These EPUB chapters have already been created in this window.");
+        }
+        if (committing) {
+          throw new Error(language === "zh-CN" ? "EPUB 章节正在生成，请稍候。" : "EPUB chapter generation is already running.");
+        }
+        committing = true;
+        let prepared = null;
+        try {
+          const request = validateCommitRequest(rawRequest, preview.proposedSections.length);
+          prepared = await prepareEpubChapterFiles(
+            candidate.path,
+            preview,
+            request.selectedIndexes,
+            request.metadata
+          );
+          const confirmed = Services.prompt.confirm(
+            win,
+            request.mode === "parentAttachments"
+              ? t(language, "confirmCreateParents")
+              : t(language, "confirmCreateSections"),
+            `${formatEpubCommitSummary(prepared, request.mode, language)}${request.mode === "bookSections" ? `\n${t(language, request.inheritCollections ? "collectionAdd" : "collectionNone")}` : ""}\n\n${t(language, "continuePrompt")}`
+          );
+          if (!confirmed) return { status: "cancelled", message: t(language, "cancelledLibrary") };
+          const currentBook = await Zotero.Items.getAsync(target.book.id);
+          if (!currentBook || !isBook(currentBook)) {
+            throw new Error(language === "zh-CN" ? "母本 Book 已不存在或类型发生变化，已停止写入。" : "The original Book no longer exists or its item type changed.");
+          }
+          const result = request.mode === "parentAttachments"
+            ? await commitPreparedAttachments(currentBook, prepared)
+            : await commitPreparedBookSections(currentBook, prepared, request.inheritCollections);
+          committed = true;
+          const count = result.attachmentCount;
+          return {
+            status: "created",
+            message: language === "zh-CN"
+              ? request.mode === "parentAttachments"
+                ? `完成：已在原 Book 下创建 ${count} 个独立章节 EPUB。`
+                : `完成：已创建 ${count} 个独立 Book Section 及对应章节 EPUB。`
+              : request.mode === "parentAttachments"
+                ? `Completed: created ${count} chapter EPUBs under the original Book.`
+                : `Completed: created ${count} independent Book Sections with their chapter EPUBs.`
+          };
+        } finally {
+          if (prepared) await cleanupPreparedChapters(prepared);
+          committing = false;
+        }
+      }
+    };
+    win.openDialog(
+      `${PREVIEW_URI}?rev=${encodeURIComponent(pluginVersion)}`,
+      "_blank",
+      "chrome,centerscreen,resizable,dialog=no,width=1180,height=760",
+      JSON.stringify(model),
+      controller
+    );
+  }
   async function previewSelected(win) {
     try {
       const language = currentLanguage();
       const target = await selectedTarget(win);
       if (!target) {
         throw new Error(
-          language === "zh-CN" ? "\u8BF7\u53EA\u9009\u4E2D\u4E00\u4E2A Book \u6761\u76EE\uFF0C\u6216\u8BE5 Book \u4E0B\u7684\u4E00\u4E2A PDF \u9644\u4EF6\u3002" : "Select exactly one Book or one PDF attachment under a Book."
+          language === "zh-CN" ? "请选择一个 Book 条目，或其下的一个 PDF / EPUB 附件。" : "Select exactly one Book or one PDF / EPUB attachment under a Book."
         );
       }
       const pendingJournals = await pendingRollbackJournals(target.book);
@@ -102216,8 +102418,12 @@ All tocPdfPages, physicalPdfPage values, and paginationAnchors must use SOURCE-P
         if (!confirmed || recoveryChoice.value !== 1) return;
         await discardRollbackJournals(pendingJournals);
       }
-      const candidate = await choosePdf(win, target);
+      const candidate = await chooseDocument(win, target);
       if (!candidate) return;
+      if (isEpub(candidate.item)) {
+        await previewEpubSelected(win, target, candidate, language);
+        return;
+      }
       const { item: attachment, path } = candidate;
       Zotero.debug(`Zotero Book Splitter: reading ${path}`);
       const ioBytes = await IOUtils.read(path);
@@ -102513,9 +102719,9 @@ ${t(language, "continuePrompt")}`
     });
     const onPopupShowing = () => {
       const item = selectedItem(win);
-      const relevant = isBook(item) || isPdf(item);
+      const relevant = isBook(item) || isPdf(item) || isEpub(item);
       const language = currentLanguage();
-      outlineItem.hidden = !relevant;
+      outlineItem.hidden = !relevant || isEpub(item);
       menuItem.hidden = !relevant;
       outlineItem.setAttribute(
         "label",
@@ -102523,7 +102729,9 @@ ${t(language, "continuePrompt")}`
       );
       menuItem.setAttribute(
         "label",
-        t(language, isPdf(item) ? "splitPdfMenu" : "splitBookMenu")
+        isEpub(item)
+          ? language === "zh-CN" ? "拆分此 EPUB…" : "Split This EPUB into Chapters…"
+          : t(language, isPdf(item) ? "splitPdfMenu" : "splitBookMenu")
       );
     };
     menu.addEventListener("popupshowing", onPopupShowing);

@@ -1,4 +1,5 @@
 var ZoteroBookSplitter;
+var ZoteroBookSplitterEPUB;
 var chromeHandle;
 
 function log(message) {
@@ -18,6 +19,7 @@ async function startup({ id, version, rootURI }) {
     Services.io.newURI(`${rootURI}manifest.json`),
     [["content", "zotero-book-splitter", "content/"]],
   );
+  Services.scriptloader.loadSubScript(`${rootURI}content/epub.js`);
   Services.scriptloader.loadSubScript(`${rootURI}content/plugin.js`);
   await ZoteroBookSplitter.init({ id, version, rootURI });
   ZoteroBookSplitter.addToAllWindows();
@@ -35,6 +37,7 @@ function shutdown() {
   log("Shutting down");
   ZoteroBookSplitter?.removeFromAllWindows();
   ZoteroBookSplitter = undefined;
+  ZoteroBookSplitterEPUB = undefined;
   chromeHandle?.destruct();
   chromeHandle = undefined;
 }

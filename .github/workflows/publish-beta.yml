@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/publish-beta.yml"
+      - "scripts/build-release.py"
+      - "src/**"
+      - "updates.json"
   workflow_dispatch:
 
 permissions:
@@ -15,27 +18,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create v0.13.6 beta release
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/bootstrap.js
+          node --check src/content/plugin.js
+          node --check src/content/preview.js
+          node --check src/content/epub.js
+
+      - name: Build and validate the installable XPI
+        run: python3 scripts/build-release.py
+
+      - name: Publish installable artifacts and prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.13.6 >/dev/null 2>&1; then
-            echo "Release v0.13.6 already exists"
-            exit 0
+          version="$(python3 -c 'import json; print(json.load(open("src/manifest.json"))["version"])')"
+          xpi="zoterobooksplitter${version}.xpi"
+          source="zotero-book-splitter-${version}-source.zip"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${xpi}" "${source}"
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Zotero Book Splitter ${version} artifacts [skip ci]"
+            git push origin HEAD:main
           fi
-          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
-            -f tag_name="v0.13.6" \
-            -f target_commitish="${GITHUB_SHA}" \
-            -f name="Zotero Book Splitter 0.13.6 Beta" \
-            -f body="Small-scale beta release for Zotero 9. Please verify chapter titles, authors, and page ranges before generating items." \
-            -F draft=false \
-            -F prerelease=true \
-            --jq '.id')"
-          curl --fail-with-body --location \
-            --request POST \
-            --header "Accept: application/vnd.github+json" \
-            --header "Authorization: Bearer ${GH_TOKEN}" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            --header "Content-Type: application/x-xpinstall" \
-            --data-binary "@zoterobooksplitter0.13.6.xpi" \
-            "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=zoterobooksplitter0.13.6.xpi"
+
+          if gh release view "v${version}" >/dev/null 2>&1; then
+            gh release upload "v${version}" "${xpi}" "${source}" --clobber
+          else
+            gh release create "v${version}" "${xpi}" "${source}" \
+              --target "$(git rev-parse HEAD)" \
+              --title "Zotero Book Splitter ${version} Beta" \
+              --notes "Adds native EPUB 2/3 chapter splitting while preserving the complete book, chapter resources, linked notes, and optional independently citable Book Sections." \
+              --prerelease
+          fi

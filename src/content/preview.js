@@ -515,6 +515,7 @@
   function installCommitHandler(controller, model) {
     const button = element("commit-button");
     const repairButton = element("repair-bookmarks-button");
+    repairButton.hidden = model.documentType === "epub";
     const interactive = Array.from(
       document.querySelectorAll(
         "input[name='output-mode'], #inherit-collections, .chapter-select, .metadata-input, #select-all, #select-none"
@@ -579,10 +580,12 @@
       putText("selected-count", `${indexes.length} / ${model.proposedSections.length}`);
       putText(
         "operation-mode",
-        t(
-          model.language,
-          mode === "parentAttachments" ? "originalBookPdfs" : "independentBookSections"
-        )
+        model.documentType === "epub" && mode === "parentAttachments"
+          ? model.language === "zh-CN" ? "原 Book 下的 EPUB" : "EPUBs under the original Book"
+          : t(
+            model.language,
+            mode === "parentAttachments" ? "originalBookPdfs" : "independentBookSections"
+          )
       );
       if (rangeIssues.length > 0) {
         button.textContent = t(model.language, "rangeConflict");
@@ -684,6 +687,12 @@
       const dialogWindow = window;
       const model = parseModel(dialogWindow.arguments?.[0]);
       translateStatic(model.language);
+      if (model.documentType === "epub") {
+        putText("summary-pdf-label", "EPUB");
+        putText("summary-pages-label", model.language === "zh-CN" ? "正文文档数" : "Spine documents");
+        putText("printed-pages-heading", model.language === "zh-CN" ? "页码／章节位置" : "Pages / chapter position");
+        putText("physical-pages-heading", model.language === "zh-CN" ? "EPUB 正文文档" : "EPUB spine documents");
+      }
       const controller = dialogWindow.arguments?.[1];
       const sections = model.proposedSections;
       if (model.citationTitles.length !== sections.length) {
@@ -709,10 +718,12 @@
       putText("section-count", sections.length);
       putText(
         "source-type",
-        t(
-          model.language,
-          model.sourceType === "ai-toc" ? "sourceAi" : model.sourceType === "printed-toc" ? "sourcePrinted" : model.sourceType === "catalog-toc" ? "sourceCatalog" : "sourceOutline"
-        )
+        model.sourceType === "epub-navigation"
+          ? model.language === "zh-CN" ? "EPUB 原生目录" : "Native EPUB navigation"
+          : t(
+            model.language,
+            model.sourceType === "ai-toc" ? "sourceAi" : model.sourceType === "printed-toc" ? "sourcePrinted" : model.sourceType === "catalog-toc" ? "sourceCatalog" : "sourceOutline"
+          )
       );
       putText(
         "notes-range",
@@ -838,7 +849,9 @@
         pagesCell.append(startInput, separator, endInput);
         row.appendChild(pagesCell);
         const physicalCell = htmlElement("td");
-        physicalCell.textContent = `${section.startPageIndex + 1}\u2013${section.endPageIndex + 1} (${section.pageCount})`;
+        physicalCell.textContent = model.documentType === "epub"
+          ? `${section.spineStartIndex + 1}\u2013${section.spineEndIndex + 1} (${section.pageCount})`
+          : `${section.startPageIndex + 1}\u2013${section.endPageIndex + 1} (${section.pageCount})`;
         row.appendChild(physicalCell);
         tableBody.appendChild(row);
       }
