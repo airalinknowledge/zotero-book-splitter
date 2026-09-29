@@ -55,6 +55,6 @@ jobs:
             gh release create "v${version}" "${xpi}" "${source}" \
               --target "$(git rev-parse HEAD)" \
               --title "Zotero Book Splitter ${version} Beta" \
-              --notes "Adds native EPUB 2/3 chapter splitting, preserves linked notes outside the reading spine, and retains existing multi-level PDF bookmarks, destinations, styles, and collapse state during bookmark repair." \
+              --notes "Extends Zotero Book Splitter compatibility to Zotero 10 while retaining Zotero 9 support. PDF and EPUB chapter splitting and bookmark preservation are unchanged." \
               --prerelease
           fi

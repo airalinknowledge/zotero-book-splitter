@@ -1,6 +1,6 @@
 # Zotero Book Splitter
 
-一款帮助读者整理长篇 PDF 和 EPUB 的 Zotero 9 插件，适合论文集、选集和篇幅较长的著作。
+一款帮助读者整理长篇 PDF 和 EPUB 的 Zotero 9–10 插件，适合论文集、选集和篇幅较长的著作。
 
 PDF 可以读取原生目录书签、通过你配置的 AI 接口识别目录，或在本地扫描目录页。EPUB 可以直接读取 EPUB 3 导航目录或 EPUB 2 NCX 目录，也支持多个章节共用同一个 XHTML 文件。确认章节标题、作者和页码后，可将选中的章节生成：
 
@@ -16,12 +16,12 @@ EPUB 拆分会保留原有样式、图片、字体，以及章节引用的注释
 
 ## 安装
 
-1. 下载 [`zoterobooksplitter0.14.1.xpi`](https://github.com/airalinknowledge/zotero-book-splitter/releases/download/v0.14.1/zoterobooksplitter0.14.1.xpi)。
+1. 下载 [`zoterobooksplitter0.14.2.xpi`](https://github.com/airalinknowledge/zotero-book-splitter/releases/download/v0.14.2/zoterobooksplitter0.14.2.xpi)。
 2. 打开 Zotero，进入“设置 → 高级 → 扩展”。
 3. 点击齿轮按钮，选择“从文件安装附加组件”，然后选择下载的 XPI。
 4. 按提示重启 Zotero。
 
-适用版本：Zotero 9。
+适用版本：Zotero 9–10。Zotero 10 的本机图形界面尚未在此构建环境中验证；如果遇到运行问题，请附上 Zotero 版本和错误信息。
 
 ## 使用提示
 
@@ -31,8 +31,8 @@ EPUB 拆分会保留原有样式、图片、字体，以及章节引用的注释
 
 ## 文件说明
 
-- `zoterobooksplitter0.14.1.xpi`：可直接安装的插件。
-- `zotero-book-splitter-0.14.1-source.zip`：完整源代码及随包资源。
+- `zoterobooksplitter0.14.2.xpi`：可直接安装的插件。
+- `zotero-book-splitter-0.14.2-source.zip`：完整源代码及随包资源。
 - `src/`：便于在线查看的主要源代码。
 - `updates.json`：Zotero 自动更新信息。
 

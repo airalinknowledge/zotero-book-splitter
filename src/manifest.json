@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Zotero Book Splitter",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "description": "Split PDF and EPUB books into independently citable chapters while preserving the complete original book.",
   "icons": {
     "32": "content/icon32.png",
@@ -13,7 +13,7 @@
       "id": "zotero-book-splitter@juntaoyang.local",
       "update_url": "https://raw.githubusercontent.com/airalinknowledge/zotero-book-splitter/main/updates.json",
       "strict_min_version": "8.999",
-      "strict_max_version": "9.0.*"
+      "strict_max_version": "10.0.*"
     }
   }
 }
